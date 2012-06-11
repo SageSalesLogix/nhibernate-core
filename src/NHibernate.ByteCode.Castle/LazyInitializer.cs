@@ -58,6 +58,23 @@ namespace NHibernate.ByteCode.Castle
 					// the method/property against the real class
 					if (invocation.ReturnValue == InvokeImplementation)
 					{
+						var name = invocation.Method.Name;
+						var paramCount = invocation.Method.GetParameters().Length;
+						if (name == "GetHashCode" && paramCount == 0)
+						{
+							//return the identifier's hash code instead
+							invocation.ReturnValue = Identifier.GetHashCode();
+							return;
+						}
+						if (name == "Equals" && paramCount == 1)
+						{
+							//compare the identifiers instead
+							var otherProxy = (INHibernateProxy) invocation.Arguments[0];
+							var otherIdentifier = otherProxy.HibernateLazyInitializer.Identifier;
+							invocation.ReturnValue = Equals(Identifier, otherIdentifier);
+							return;
+						}
+
 						invocation.ReturnValue = invocation.Method.Invoke(GetImplementation(), invocation.Arguments);
 						return;
 					}
